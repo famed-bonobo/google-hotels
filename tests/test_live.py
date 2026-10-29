@@ -20,6 +20,12 @@ def lisbon(hotels: GoogleHotels) -> list[dict]:
     return hotels.search('hotels in Lisbon', nights=2, max_results=25, with_offers=True, min_rating=4.0)
 
 
+@pytest.fixture(scope='module')
+def busiest(lisbon: list[dict]) -> dict:
+    """The most reviewed hotel of the search: Google's order differs by IP, its review count does not matter."""
+    return max(lisbon, key=lambda hotel: hotel['reviewsCount'] or 0)
+
+
 def test_search_with_offers(lisbon: list[dict]) -> None:
     assert len(lisbon) == 25
     assert all(hotel['propertyToken'] and hotel['name'] for hotel in lisbon)
@@ -39,18 +45,20 @@ def test_hotel_by_name(hotels: GoogleHotels) -> None:
     assert 'Avenida Palace' in page['name'] and page['bookingSources'] and page['address']
 
 
-def test_price_calendar(hotels: GoogleHotels, lisbon: list[dict]) -> None:
-    calendar = hotels.price_calendar(lisbon[0], days=60, nights=2)
-    assert len(calendar) >= 50 and any(day['isCheapestDate'] for day in calendar)
+def test_price_calendar(hotels: GoogleHotels, busiest: dict) -> None:
+    # Sold-out dates have no price, so a busy hotel prices fewer than all 60 days.
+    calendar = hotels.price_calendar(busiest, days=60, nights=2)
+    assert len(calendar) >= 30 and any(day['isCheapestDate'] for day in calendar)
 
 
-def test_reviews(hotels: GoogleHotels, lisbon: list[dict]) -> None:
-    reviews = hotels.reviews(lisbon[0], limit=250, sort='newest')
+def test_reviews(hotels: GoogleHotels, busiest: dict) -> None:
+    assert busiest['reviewsCount'] >= 1000
+    reviews = hotels.reviews(busiest, limit=250, sort='newest')
     assert len(reviews) == 250 and all(review['rating'] for review in reviews)
 
 
-def test_photos(hotels: GoogleHotels, lisbon: list[dict]) -> None:
-    photos = hotels.photos(lisbon[0], limit=20)
+def test_photos(hotels: GoogleHotels, busiest: dict) -> None:
+    photos = hotels.photos(busiest, limit=20)
     assert photos and all(photo['url'].startswith('https://') for photo in photos)
 
 

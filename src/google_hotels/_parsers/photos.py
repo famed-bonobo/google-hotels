@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import urlsplit
 
 from .._protocol import constants
 from .._protocol.page_data import value_at
@@ -30,6 +31,9 @@ CATEGORY_NAMES = {1: 'At a glance', 6: 'Bedroom', 8: 'Bathroom', 5: 'Exterior', 
 # "At a glance" mixes the other categories, so it is read last and only adds what they missed.
 MIXED_CATEGORY = 1
 SOURCE_PROPERTY = 'property'
+# Booking sites' full-size photos often come without a contributor; their image servers name the site. They also come
+# as http:// links, and these servers answer the same images over https (checked October 2026).
+SITE_OF_IMAGE_HOST = {'agoda.net': 'Agoda', 'bstatic.com': 'Booking.com', 'trvl-media.com': 'Expedia', 'tacdn.com': 'Tripadvisor'}
 
 
 def categories_request(property_token: str) -> list[Any]:
@@ -63,16 +67,23 @@ def _parse_photo(item: list[Any], category: Any, hotel_name: str) -> dict[str, A
     thumbnail = f'https:{thumbnail}' if thumbnail.startswith('//') else thumbnail
     height, width = value_at(item, *SIZE_PATH, 0), value_at(item, *SIZE_PATH, 1)
     added = value_at(item, *ADDED_PATH)
+    url = _full_size_url(item, thumbnail, width, height)
+    site = _site_of_image(url)
     return {
-        'url': _full_size_url(item, thumbnail, width, height),
+        'url': f'https://{url.removeprefix("http://")}' if site else url,
         'thumbnailUrl': thumbnail,
         'width': width if isinstance(width, int) else None,
         'height': height if isinstance(height, int) else None,
         'category': CATEGORY_NAMES.get(category, f'category {category}'),
         'caption': value_at(item, CAPTION),
-        'source': contributor if is_site else SOURCE_PROPERTY,
+        'source': contributor if is_site else site or SOURCE_PROPERTY,
         'addedAt': datetime.fromtimestamp(added, UTC).date().isoformat() if isinstance(added, int) else None,
     }
+
+
+def _site_of_image(url: str) -> str | None:
+    host = urlsplit(url).hostname or ''
+    return next((site for domain, site in SITE_OF_IMAGE_HOST.items() if host == domain or host.endswith(f'.{domain}')), None)
 
 
 def _full_size_url(item: list[Any], thumbnail: str, width: Any, height: Any) -> str:
