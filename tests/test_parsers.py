@@ -144,10 +144,12 @@ def test_photos_keep_the_property_and_sites_and_drop_visitors() -> None:
         'NEXT',
     ]
     agoda = nested({(0,): 'https://lh6/proxy/x', (14,): [1, 'http://pix8.agoda.net/hotelImages/1.jpg'], (17, 2, 2): [500, 700]})
-    page[0].append(agoda)
+    booking = nested({(0,): 'https://lh4/proxy/y', (14,): [1, 'https://q-xx.bstatic.com/images/2.jpg'], (17, 2, 2): [500, 700]})
+    page[0].extend([agoda, booking])
     photos, token = parse_category_page(page, 6, 'Hotel Arts')
-    assert token == 'NEXT' and [entry['source'] for entry in photos] == ['property', 'Expedia', 'Agoda']
+    assert token == 'NEXT' and [entry['source'] for entry in photos] == ['property', 'Expedia', 'Agoda', 'Booking.com']
     assert photos[2]['url'] == 'https://pix8.agoda.net/hotelImages/1.jpg'
+    assert photos[3]['url'] == 'https://q-xx.bstatic.com/images/2.jpg'
     assert photos[0]['url'] == 'https://lh3/own=w1200-h800-k-no' and photos[0]['category'] == 'Bedroom'
     assert 'A Visitor' not in repr(photos)
 

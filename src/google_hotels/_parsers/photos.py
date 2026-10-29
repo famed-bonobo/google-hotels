@@ -70,7 +70,7 @@ def _parse_photo(item: list[Any], category: Any, hotel_name: str) -> dict[str, A
     url = _full_size_url(item, thumbnail, width, height)
     site = _site_of_image(url)
     return {
-        'url': f'https://{url.removeprefix("http://")}' if site else url,
+        'url': f'https://{url.removeprefix("http://")}' if site and url.startswith('http://') else url,
         'thumbnailUrl': thumbnail,
         'width': width if isinstance(width, int) else None,
         'height': height if isinstance(height, int) else None,
