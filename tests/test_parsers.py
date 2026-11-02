@@ -157,3 +157,24 @@ def test_photos_keep_the_property_and_sites_and_drop_visitors() -> None:
 def test_photo_categories_put_the_mixed_one_last() -> None:
     payload = nested({(1, 7): [[1, None, 'P1'], [6, None, 'P6'], [5, None, 'P5']]})
     assert parse_categories(payload) == [(6, 'P6'), (5, 'P5'), (1, 'P1')]
+
+
+def test_member_discount_reads_the_shown_rate_as_the_member_rate() -> None:
+    # Real block for a 2-night stay (2026-11-02): $209 shown per night, $231 regular, "Member rate, save 9%".
+    member_block = [
+        ['$231', None, 230.65619, None, 231],
+        [['Member rate, save 9%']],
+        True,
+        False,
+        None,
+        0,
+        True,
+        ['$461', None, 461.31238, None, 461],
+    ]
+    official = nested({(0, 0): 'Hotel site', (0, 5): True, (12, 4, 2): 209.27222, (12, 5, 2): 418.54443, (12, 11): member_block})
+    plain = nested({(0, 0): 'Booking.com', (12, 4, 2): 215.09944, (12, 11): [None, None, False, False, None, 0, False]})
+    hotel_site, booking = parse_booking_sources(nested({(0, 6, 2, 21): [official, plain]}))
+    assert hotel_site['memberRatePerNight'] == 209.27 and hotel_site['memberTotalRate'] == 418.54
+    assert hotel_site['nonMemberRatePerNight'] == 230.66 and hotel_site['nonMemberTotalRate'] == 461.31
+    assert hotel_site['memberRateLabel'] == 'Member rate, save 9%'
+    assert booking['memberRatePerNight'] is None and booking['nonMemberRatePerNight'] is None

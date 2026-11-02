@@ -63,13 +63,27 @@ def _parse_offer(entry: list[Any]) -> dict[str, Any]:
         'ratePerNightDisplay': value_at(entry, 12, 4, 0),
         'totalRate': money_at(entry, 12, 5, 2),
         'totalRateDisplay': value_at(entry, 12, 5, 0),
-        # Price for members who sign up for free, with Google's label such as "Member discount".
-        'memberRatePerNight': money_at(member_rate, 0, 2),
-        'memberTotalRate': money_at(member_rate, 7, 2),
-        'memberRateLabel': value_at(member_rate, 1, 0, 0),
+        **_member_rates(entry, member_rate),
         'bookingUrl': _google_url(click_path),
         'partnerUrl': _partner_url(click_path),
         'logo': f'https:{logo}' if isinstance(logo, str) and logo.startswith('//') else logo,
+    }
+
+
+def _member_rates(entry: list[Any], member_rate: Any) -> dict[str, Any]:
+    """The free-membership discount of an offer, when the site gives one.
+
+    Google then shows the member rate as the offer's rate, and the member block holds the regular rate it is cut from:
+    $209 shown, $231 regular, "Member rate, save 9%" (checked against Booking.com's $215 for the same stay, 2026-11-02).
+    """
+    regular_per_night = money_at(member_rate, 0, 2)
+    has_member_rate = regular_per_night is not None
+    return {
+        'memberRatePerNight': money_at(entry, 12, 4, 2) if has_member_rate else None,
+        'memberTotalRate': money_at(entry, 12, 5, 2) if has_member_rate else None,
+        'nonMemberRatePerNight': regular_per_night,
+        'nonMemberTotalRate': money_at(member_rate, 7, 2),
+        'memberRateLabel': value_at(member_rate, 1, 0, 0),
     }
 
 
