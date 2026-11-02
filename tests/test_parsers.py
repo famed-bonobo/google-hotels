@@ -154,6 +154,14 @@ def test_photos_keep_the_property_and_sites_and_drop_visitors() -> None:
     assert 'A Visitor' not in repr(photos)
 
 
+def test_photos_from_google_servers_are_served_over_https() -> None:
+    # Real case (2026-11-02): Google gave a property photo as an http:// gstatic link.
+    gstatic = nested({(0,): 'https://lh6/proxy/z', (14,): [1, 'http://t2.gstatic.com/images?q=tbn:ANd9Gc'], (22, 0): 1760000000})
+    other = nested({(0,): 'https://lh6/proxy/w', (14,): [1, 'http://images.example.org/1.jpg']})
+    photos, _ = parse_category_page([[gstatic, other], None], 6, 'Hotel Arts')
+    assert [photo['url'] for photo in photos] == ['https://t2.gstatic.com/images?q=tbn:ANd9Gc', 'http://images.example.org/1.jpg']
+
+
 def test_photo_categories_put_the_mixed_one_last() -> None:
     payload = nested({(1, 7): [[1, None, 'P1'], [6, None, 'P6'], [5, None, 'P5']]})
     assert parse_categories(payload) == [(6, 'P6'), (5, 'P5'), (1, 'P1')]
