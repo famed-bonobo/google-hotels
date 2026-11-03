@@ -1,7 +1,6 @@
 # google-hotels
 
-[![PyPI](https://img.shields.io/pypi/v/google-hotels)](https://pypi.org/project/google-hotels/)
-[![Python](https://img.shields.io/pypi/pyversions/google-hotels)](https://pypi.org/project/google-hotels/)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![Tests](https://github.com/famed-bonobo/google-hotels/actions/workflows/tests.yml/badge.svg)](https://github.com/famed-bonobo/google-hotels/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -31,7 +30,7 @@ with GoogleHotels(currency="EUR") as hotels:
 ## Install
 
 ```bash
-pip install google-hotels
+pip install "git+https://github.com/famed-bonobo/google-hotels"
 ```
 
 Python 3.11 or newer. The only dependency is [httpx](https://www.python-httpx.org/).
@@ -190,7 +189,7 @@ five at a time by default (`max_concurrency`). From one home IP that pace has wo
 how much one IP can ask for. For large or scheduled jobs, pass a rotating proxy:
 
 ```python
-GoogleHotels(proxy="http://user:password@proxy.example.com:8000")   # socks5:// needs: pip install "google-hotels[socks]"
+GoogleHotels(proxy="http://user:password@proxy.example.com:8000")   # socks5:// needs the "socks" extra: pip install "google-hotels[socks] @ git+https://github.com/famed-bonobo/google-hotels"
 ```
 
 ## Running it at scale
